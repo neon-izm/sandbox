@@ -83,10 +83,10 @@ while(1){
 //ここまでで明らかに無駄な部分を省いた実質的なスタートインデックス、及び終端のインデックスが求まった
 int result=0;
 for(int left=pair_max_left; left<=pair_min_left; left++){
-	for(int right=pair_max_left; right<=index_max; right++){
+	for(int right=left+1; right<=index_max; right++){
 		int t=sorted_array[left]+sorted_array[right];
 		//early return
-		if(t==target && right!=left){
+		if(t==target ){
 		return t;
 		}
 		else if(t<target && t>result){
