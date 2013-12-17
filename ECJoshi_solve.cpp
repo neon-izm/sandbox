@@ -18,13 +18,15 @@
 #include <vector>
 #include <fstream>
 #include <algorithm>
-
+#include <cstdlib>
 class CampaignData{
 public:
 	bool ReadData(std::istream &input);
 	void WriteData()const;
 	void Solve();
 	void Print()const;
+	CampaignData(){};
+	~CampaignData(){};
 private:
 	int day_num;
 	int item_num;
@@ -32,7 +34,6 @@ private:
 	std::vector<int> day_price_targets;
 	std::vector<int> results;
 
-	bool ParseFirstLine(const std::string &line);
 };
 //引数のソートしたvectorの中から2個を選んでtargetに一番近い組み合わせの足し算結果を返す
 //今回の問題の本質的な部分
@@ -42,10 +43,10 @@ int SolveDPFromSortedArray(const int target,std::vector<int> &sorted_array);
 void CampaignData::Solve(){
 	//まずは降順に並び替え
 	std::sort(item_prices.begin(),item_prices.end(),std::greater<int>());
-	for(int i=0; i<day_price_targets.size();i++){
+	for(unsigned int i=0; i<day_price_targets.size();i++){
 		int currentday_result=SolveDPFromSortedArray( day_price_targets[i],item_prices);
 		results.push_back(currentday_result);
-	//std::cout<<"solve:"<<day_price_targets[i]<<"  result: "<<result[i]<<std::endl;
+	//std::cout<<"solve:"<<day_price_targets[i]<<"  result: "<<results[i]<<std::endl;
 	}
 	
 return;
@@ -60,7 +61,14 @@ int pair_min_left=0;
 int index_max=sorted_array.size()-1;
 //枝刈り用の初期値検索。targetより大きい数は除外する。また、2個を選ぶうち、明らかに小さな2個を選ばないように調べている
 while(1){
-	if(index_max<=pair_max_left || index_max<=pair_min_left){break;}
+	if(index_max<=pair_max_left){
+		pair_max_left=index_max;
+		pair_min_left=index_max;
+		break;
+	} 
+	if(index_max<=pair_min_left){
+		pair_min_left=index_max;
+		break;}
 
 	if(sorted_array[pair_max_left]>target ){
 		pair_max_left++;
@@ -75,10 +83,10 @@ while(1){
 //ここまでで明らかに無駄な部分を省いた実質的なスタートインデックス、及び終端のインデックスが求まった
 int result=0;
 for(int left=pair_max_left; left<=pair_min_left; left++){
-	for(int right=pair_min_left; right<=index_max; right++){
+	for(int right=pair_max_left; right<=index_max; right++){
 		int t=sorted_array[left]+sorted_array[right];
 		//early return
-		if(t==target){
+		if(t==target && right!=left){
 		return t;
 		}
 		else if(t<target && t>result){
@@ -91,23 +99,26 @@ return result;
 
 //結果を出力する。
 void CampaignData::WriteData()const{
-	std::for_each(results.begin(), results.end(), [](int n) { std::cout << n << std::endl; });
+	//std::for_each(results.begin(), results.end(), [](int n) { std::cout << n << std::endl; });
+	for(unsigned int i=0; i<results.size();i++){
+		std::cout<<results[i]<<std::endl;
+	}
 	return;
 };
 
 //入力ストリームから書式に従ってデータを読み込む。
 //引数でistreamを取ることで標準入力だけでなく、テストする時にファイル入力と切り替えられる
 bool CampaignData::ReadData(std::istream &input){
+
+	input >> item_num >> day_num;
+	
+	//ここで1行目のパースが終わったので入力が途切れるか
+	//1行目のパース結果分のデータを受け取り終わるまで読み込みを続ける
 	std::string current_line;
 	std::getline(input,current_line);
 	
-	bool parseok=ParseFirstLine(current_line);
-	if(parseok==false){return false;}
-	//ここで1行目のパースが終わったので入力が途切れるか
-	//1行目のパース結果分のデータを受け取り終わるまで読み込みを続ける
 	int line_counter=0;
 	while(std::getline(input,current_line)){
-		if(current_line.empty() ){break;}
 		
 		int tmp=std::atoi(current_line.c_str());
 		//読み込んだ1行の数字が商品の値段か、キャンペーンの価格かを振り分ける
@@ -122,19 +133,6 @@ bool CampaignData::ReadData(std::istream &input){
 
 	return true;
 };
-
-//読み込み関数のうち、一行目だけ特殊な書式なので専用の関数を設けた
-bool CampaignData::ParseFirstLine(const std::string &line){
-	std::stringstream buf(line);
-	std::string day_s,item_num_s;
-	if(buf>>item_num_s && buf>>day_s){
-		item_num= std::atoi(item_num_s.c_str());
-		day_num= std::atoi(day_s.c_str());
-	}
-	else{return false;}
-
-	return true;
-}
 
 
 //デバッグする時に入力の中身を表示する関数
@@ -151,43 +149,22 @@ std::cout<<"Print() Finish"<<std::endl;
 return;
 }
 
-/*	testdata.txt
-4 3　 
-8000 
-4000 
-9000
-6000
-3000 
-14000 
-10000 
-*/
-//冗長だが、テストコードの例を示す
-void TESTCODE(std::string filename="testdata.txt"){
-		
+
+
+
+int main()
+{
 	CampaignData campaigndata;
+	
+// READ_FROM_FILE
+	
 	std::ifstream ifs( "testdata.txt" );
 	campaigndata.ReadData(ifs);
 	campaigndata.Print();
-	campaigndata.Solve();
-	campaigndata.WriteData();
-	return;
-}
-
-
-
-int main(int argc, char* argv[])
-{
-//ファイルから読んでみる場合はコメント解除
-//#define READ_FROM_FILE 
 	
-	CampaignData campaigndata;
-#ifdef READ_FROM_FILE
-	std::ifstream ifs( "testdata.txt" );
-	campaigndata.ReadData(ifs);
-#else
-	campaigndata.ReadData(std::cin);
-#endif
+	//campaigndata.ReadData(std::cin);
 	campaigndata.Solve();
 	campaigndata.WriteData();
 	return 0;
 }
+
