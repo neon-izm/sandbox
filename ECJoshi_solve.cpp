@@ -82,8 +82,9 @@ while(1){
 
 //ここまでで明らかに無駄な部分を省いた実質的なスタートインデックス、及び終端のインデックスが求まった
 int result=0;
-for(int left=pair_max_left; left<=pair_min_left; left++){
-	for(int right=left+1; right<=index_max; right++){
+for(int left=pair_max_left; left<pair_min_left; left++){
+	int right=pair_min_left;
+	while(right<=index_max){
 		int t=sorted_array[left]+sorted_array[right];
 		//early return
 		if(t==target ){
@@ -91,7 +92,9 @@ for(int left=pair_max_left; left<=pair_min_left; left++){
 		}
 		else if(t<target && t>result){
 		result=t;
+		break;
 		}
+		right++;
 	}
 }
 return result;
@@ -116,7 +119,7 @@ bool CampaignData::ReadData(std::istream &input){
 	//1行目のパース結果分のデータを受け取り終わるまで読み込みを続ける
 	std::string current_line;
 	std::getline(input,current_line);
-	
+	item_prices.reserve(item_num);
 	int line_counter=0;
 	while(std::getline(input,current_line)){
 		
@@ -154,15 +157,18 @@ return;
 
 int main()
 {
+	std::cin.tie(0); 
+	std::ios::sync_with_stdio(false); // Cのstdioとの同期をしない
+	
 	CampaignData campaigndata;
 	
 // READ_FROM_FILE
-	
+	/*
 	std::ifstream ifs( "testdata.txt" );
 	campaigndata.ReadData(ifs);
 	campaigndata.Print();
-	
-	//campaigndata.ReadData(std::cin);
+	*/
+	campaigndata.ReadData(std::cin);
 	campaigndata.Solve();
 	campaigndata.WriteData();
 	return 0;
