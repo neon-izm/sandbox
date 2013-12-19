@@ -52,51 +52,33 @@ void CampaignData::Solve(){
 return;
 }
 
-
+//探索を早くする
 int SolveDPFromSortedArray(const int target,std::vector<int> &sorted_array){
 //ペアのうち、大きい方をleft,小さい方をrightとする.left>=rightである
+//sort済の配列は　最大....対象....対象の半分.....最小　の順に並んでいる
+//pair_max_leftは対象-1の場所を指し、pair_min_leftは対象の半分-1の場所を指す
+//left側のfor分は上記2点の間にあることが自明(pair_min_leftではなく、end-1だとワーストケースのループ回数が増える)
+	int result=0;
+	std::vector<int>::iterator pair_max_left=std::upper_bound(sorted_array.begin(), sorted_array.end(),target, std::greater<int>());
+	//early return
+	if(pair_max_left==sorted_array.end()){return result;}
+ 
+	std::vector<int>::iterator pair_min_left=std::upper_bound(sorted_array.begin(), sorted_array.end(),target*0.5, std::greater<int>());
 
-int pair_max_left=0;
-int pair_min_left=0;
-int index_max=sorted_array.size()-1;
-//枝刈り用の初期値検索。targetより大きい数は除外する。また、2個を選ぶうち、明らかに小さな2個を選ばないように調べている
-while(1){
-	if(index_max<=pair_max_left){
-		pair_max_left=index_max;
-		pair_min_left=index_max;
-		break;
-	} 
-	if(index_max<=pair_min_left){
-		pair_min_left=index_max;
-		break;}
+	if(pair_min_left==sorted_array.end()){
+		pair_min_left--;
+	}
 
-	if(sorted_array[pair_max_left]>target ){
-		pair_max_left++;
-	}
-	if(sorted_array[pair_min_left]*2>=target ){
-		pair_min_left++;
-	}else{
-	break;
-	}
-}
+	for (std::vector<int>::iterator it = pair_max_left; it != pair_min_left; ++it) {
+            std::vector<int>::iterator it2 = std::lower_bound(it + 1, sorted_array.end(),target - *it,std::greater<int>());
+            if (it2 != sorted_array.end() && result < *it + *it2) {
+                result = *it + *it2;
+				if (result == target) {
+					return result;
+                }
+            }
+        }
 
-//ここまでで明らかに無駄な部分を省いた実質的なスタートインデックス、及び終端のインデックスが求まった
-int result=0;
-for(int left=pair_max_left; left<pair_min_left; left++){
-	int right=pair_min_left;
-	while(right<=index_max){
-		int t=sorted_array[left]+sorted_array[right];
-		//early return
-		if(t==target ){
-		return t;
-		}
-		else if(t<target && t>result){
-		result=t;
-		break;
-		}
-		right++;
-	}
-}
 return result;
 }
 
@@ -118,12 +100,14 @@ bool CampaignData::ReadData(std::istream &input){
 	//ここで1行目のパースが終わったので入力が途切れるか
 	//1行目のパース結果分のデータを受け取り終わるまで読み込みを続ける
 	std::string current_line;
-	std::getline(input,current_line);
+//	std::getline(input,current_line);
 	item_prices.reserve(item_num);
+	results.reserve(day_num);
 	int line_counter=0;
-	while(std::getline(input,current_line)){
+	while(1){
 		
-		int tmp=std::atoi(current_line.c_str());
+		int tmp=0;
+		input>>tmp;
 		//読み込んだ1行の数字が商品の値段か、キャンペーンの価格かを振り分ける
 		if(line_counter<item_num){
 			item_prices.push_back(tmp);
@@ -151,7 +135,6 @@ for(unsigned int j=0;j<day_price_targets.size();j++){
 std::cout<<"Print() Finish"<<std::endl;
 return;
 }
-
 
 
 
